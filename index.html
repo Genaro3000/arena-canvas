@@ -11,13 +11,13 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <style>
   :root{
-    --void:#f2e6c8; --panel:#fdf7e8; --panel-2:#f0e2b8; --line:#d8bd7a;
+    --void:#0a0d1a; --panel:#fdf7e8; --panel-2:#f0e2b8; --line:#d8bd7a;
     --gold:#e0980f; --gold-dim:#b9860f; --crimson:#e6483c; --blue:#4c7cf0;
     --text:#2b2313; --text-dim:#8a7448;
   }
   *{ box-sizing:border-box; }
   html,body{ margin:0; padding:0; width:100%; height:100%;
-    background:radial-gradient(1200px 600px at 50% -10%, #fbead0 0%, var(--void) 60%);
+    background:radial-gradient(1200px 600px at 50% -10%, #1a2348 0%, var(--void) 60%);
     color:var(--text); font-family:'Inter',sans-serif; overflow:hidden; }
   #root{ width:100%; height:100vh; display:flex; flex-direction:column; align-items:center; padding:14px 10px 10px; }
 
@@ -213,7 +213,7 @@
   const bannedRef = db.ref('banned');   // username -> true
 
   const PALETTE = [
-    '#232a45','#ffffff','#c9d1e0','#8a93b8','#3a4468',
+    '#f5f2e8','#ffffff','#c9d1e0','#8a93b8','#3a4468',
     '#ff8fc7','#e6398a','#a83279','#6a2b8f','#4b2fa8',
     '#4c7cf0','#6fb3ff','#39c5f0','#2ec4a6','#177a6b',
     '#4cd964','#8ef07a','#c6f04c','#3a9b3a','#7a8c2e',
