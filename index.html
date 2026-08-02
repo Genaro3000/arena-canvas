@@ -11,13 +11,13 @@
 <script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
 <style>
   :root{
-    --void:#0a0d1a; --panel:#131a30; --panel-2:#1b2440; --line:#2a355c;
-    --gold:#f0b429; --gold-dim:#8a6a1f; --crimson:#e6483c; --blue:#4c7cf0;
-    --text:#eef1f8; --text-dim:#8a93b8;
+    --void:#f2e6c8; --panel:#fdf7e8; --panel-2:#f0e2b8; --line:#d8bd7a;
+    --gold:#e0980f; --gold-dim:#b9860f; --crimson:#e6483c; --blue:#4c7cf0;
+    --text:#2b2313; --text-dim:#8a7448;
   }
   *{ box-sizing:border-box; }
   html,body{ margin:0; padding:0; width:100%; height:100%;
-    background: radial-gradient(1200px 600px at 50% -10%, #1a2348 0%, var(--void) 60%);
+    background:radial-gradient(1200px 600px at 50% -10%, #fbead0 0%, var(--void) 60%);
     color:var(--text); font-family:'Inter',sans-serif; overflow:hidden; }
   #root{ width:100%; height:100vh; display:flex; flex-direction:column; align-items:center; padding:14px 10px 10px; }
 
@@ -30,8 +30,8 @@
     background:var(--panel-2); border:1px solid var(--line); color:var(--text); cursor:pointer; }
   .pillbtn:hover{ border-color:var(--gold); }
 
-  .arena-wrap{ position:relative; flex:1; width:100%; max-width:640px; display:flex; align-items:center; justify-content:center; min-height:0; }
-  .arena{ position:relative; width:min(92vw,560px); height:min(92vw,560px); background:var(--panel);
+  .arena-wrap{ position:relative; flex:1; width:100%; max-width:820px; display:flex; align-items:center; justify-content:center; min-height:0; }
+  .arena{ position:relative; width:min(92vw,760px); height:min(92vw,760px); background:var(--panel);
     border-radius:14px; border:3px solid var(--gold-dim);
     box-shadow:0 0 0 1px rgba(0,0,0,.4), inset 0 0 30px rgba(0,0,0,.55), 0 20px 50px rgba(0,0,0,.5);
     overflow:hidden; touch-action:none; }
@@ -59,7 +59,7 @@
     transition:opacity .25s ease, transform .25s ease; text-align:center; max-width:90%; }
   .toast.show{ opacity:1; transform:translateX(-50%) translateY(4px); }
 
-  .dock{ width:100%; max-width:640px; margin-top:12px; display:flex; flex-direction:column; gap:10px; }
+  .dock{ width:100%; max-width:820px; margin-top:12px; display:flex; flex-direction:column; gap:10px; }
   .palette{ display:flex; flex-wrap:wrap; gap:6px; justify-content:center; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:8px; }
   .swatch{ width:24px; height:24px; border-radius:6px; cursor:pointer; border:2px solid rgba(255,255,255,.08); transition:transform .12s ease; }
   .swatch:hover{ transform:translateY(-2px); }
@@ -193,7 +193,7 @@
   const COOLDOWN_KEY = 'arena_last_placed_v1';
   const COOLDOWN_MS = 45 * 1000;
   // change this to your own secret before publishing -- open the site with ?admin=YOUR_KEY to unlock admin tools
-  const ADMIN_KEY = 'changeme123';
+  const ADMIN_KEY = 'Inrohide';
 
   // ---- PASTE YOUR FIREBASE CONFIG HERE ----
   const firebaseConfig = {
