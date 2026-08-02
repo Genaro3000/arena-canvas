@@ -270,6 +270,12 @@
   let dragging = false, dragMoved = false, dragStart = null, panStart = null;
   let hoverCell = null;
   let latestCounts = {};
+  let renderQueued = false;
+  function scheduleRender(){
+    if(renderQueued) return;
+    renderQueued = true;
+    requestAnimationFrame(()=>{ renderQueued = false; render(); });
+  }
 
   const canvas = document.getElementById('grid');
   const ctx = canvas.getContext('2d');
@@ -446,9 +452,9 @@
       loaded = true;
       loadingEl.style.display = 'none';
       fitCanvas(); clampPan(); render();
-      pixelsRef.on('child_added', (s)=>{ pixels[s.key]=s.val(); render(); });
-      pixelsRef.on('child_changed', (s)=>{ pixels[s.key]=s.val(); render(); });
-      pixelsRef.on('child_removed', (s)=>{ delete pixels[s.key]; render(); });
+      pixelsRef.on('child_added', (s)=>{ pixels[s.key]=s.val(); scheduleRender(); });
+      pixelsRef.on('child_changed', (s)=>{ pixels[s.key]=s.val(); scheduleRender(); });
+      pixelsRef.on('child_removed', (s)=>{ delete pixels[s.key]; scheduleRender(); });
     }, ()=>{ loadingEl.textContent = 'Could not connect — check your Firebase config'; });
 
     countsRef.on('value', (snap)=>{ latestCounts = snap.val() || {}; renderLeaderboard(); });
