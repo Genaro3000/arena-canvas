@@ -186,7 +186,14 @@
   </div>
 </div>
 
-<script>
+<script type="module">
+    const isInDiscord = location.hostname.includes('discordsays.com') || location.hostname.includes('discord.com') || location.hostname.includes('discordapp.com');
+    if (isInDiscord) {
+      const { patchUrlMappings } = await import('https://cdn.jsdelivr.net/npm/@discord/embedded-app-sdk/+esm');
+      patchUrlMappings([
+        { prefix: '/firebase', target: 'community-board-8f701-default-rtdb.firebaseio.com' }
+      ]);
+    }
 (function(){
   const W = 192, H = 192;
   const NAME_KEY = 'arena_username_v1';
