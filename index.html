@@ -152,11 +152,20 @@
   <div class="dock">
     <div class="palette" id="palette"></div>
     <div class="extra-tools">
-      <label class="colorwheel-wrap" title="Custom color">
+
+    <label class="colorwheel-wrap" title="Custom color">
         <input type="color" id="colorWheel" value="#e0980f">
-      </label>
-      <div class="pillbtn" id="eyedropBtn">💧 Pick Color From Canvas</div>
+    </label>
+
+    <div class="pillbtn" id="eyedropBtn">
+        💧 Pick Color From Canvas
     </div>
+
+    <div class="pillbtn active" id="protectBtn">
+        🔒 Protect My Pixels
+    </div>
+
+</div>
     <div class="deploy-row">
       <button class="deploy-btn" id="deployBtn">
         <div class="deploy-fill" id="deployFill" style="transform:scaleY(0);"></div>
@@ -265,6 +274,7 @@
 
   let pixels = {}, loaded = false, selected = 21;
   let username = null, isAdmin = false, eraseMode = false, pickMode = false;
+  let protectOwnPixels = true;
   let lastPlaced = 0;
   let scale = 8, zoom = 1, panX = 0, panY = 0;
   let dragging = false, dragMoved = false, dragStart = null, panStart = null;
@@ -432,10 +442,20 @@
       return;
     }
      const key = keyFor(x,y);
-    if(pixels[key] !== undefined && owners[key] !== username){
-      showToast('Only ' + owners[key] + ' can recolor this tile');
-      return;
+
+if (pixels[key] !== undefined) {
+
+    if (owners[key] !== username) {
+        showToast('Only ' + owners[key] + ' can recolor this tile');
+        return;
     }
+
+    if (owners[key] === username && protectOwnPixels) {
+        showToast('Your pixel is protected');
+        return;
+    }
+
+}
     if(cooldownRemaining() > 0) return;
     pixels[key] = selected;
     render();
@@ -717,6 +737,22 @@
     eyedropBtn.classList.toggle('active', pickMode);
     showToast(pickMode ? 'Click a painted tile to copy its color' : 'Pick mode off');
     updateDeployUI();
+  });
+
+const protectBtn = document.getElementById('protectBtn');
+
+protectBtn.addEventListener('click', ()=>{
+    protectOwnPixels = !protectOwnPixels;
+
+    protectBtn.classList.toggle('active', protectOwnPixels);
+
+    if (protectOwnPixels) {
+        protectBtn.innerHTML = '🔒 Protect My Pixels';
+        showToast('Protection enabled');
+    } else {
+        protectBtn.innerHTML = '✏️ Edit My Pixels';
+        showToast('Protection disabled');
+    }
   });
 
   // ---------- boot ----------
