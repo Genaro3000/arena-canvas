@@ -65,11 +65,6 @@
   .swatch:hover{ transform:translateY(-2px); }
   .swatch.selected{ border-color:var(--gold); box-shadow:0 0 0 2px rgba(240,180,41,.35),0 0 10px rgba(240,180,41,.5); transform:translateY(-2px) scale(1.06); }
 
-  .extra-tools{ display:flex; align-items:center; justify-content:center; gap:10px; }
-  .colorwheel-wrap{ display:flex; align-items:center; }
-  .colorwheel-wrap input[type=color]{ width:36px; height:36px; border:2px solid var(--line); border-radius:9px; padding:0; cursor:pointer; background:none; }
-  .pillbtn.active{ background:var(--gold); color:#241b08; border-color:var(--gold); }
-
   .deploy-row{ display:flex; align-items:center; gap:10px; justify-content:center; }
   .deploy-btn{ position:relative; width:150px; height:44px; border-radius:22px; border:2px solid var(--gold-dim);
     background:linear-gradient(180deg,#2a2110,#1a1508); color:var(--text); font-family:'Baloo 2'; font-weight:700; font-size:14px;
@@ -77,6 +72,7 @@
   .deploy-btn.ready{ background:linear-gradient(180deg,#4a3a14,#2e2410); border-color:var(--gold); border-width:3px;
     box-shadow:0 0 26px rgba(224,152,15,.75), inset 0 0 14px rgba(224,152,15,.3); animation:pulse 1.3s infinite ease-in-out; cursor:pointer; }
   @keyframes pulse{ 0%,100%{box-shadow:0 0 20px rgba(224,152,15,.55); transform:scale(1);} 50%{box-shadow:0 0 36px rgba(224,152,15,.9); transform:scale(1.04);} }
+  @keyframes pulse{ 0%,100%{box-shadow:0 0 12px rgba(240,180,41,.35);} 50%{box-shadow:0 0 22px rgba(240,180,41,.65);} }
   .deploy-fill{ position:absolute; left:0; bottom:0; top:0; width:100%; background:rgba(76,124,240,.35); transform-origin:left; transition:transform .2s linear; }
   .deploy-label{ position:relative; z-index:1; display:flex; align-items:center; gap:6px; }
   .cd-num{ font-family:'JetBrains Mono'; font-weight:700; }
@@ -84,7 +80,7 @@
   .coords{ font-family:'JetBrains Mono'; font-size:11px; color:var(--text-dim); text-align:center; }
   .footer-note{ text-align:center; font-size:10.5px; color:var(--text-dim); opacity:.7; margin-top:2px; }
 
-  /* overlay (name gate + leaderboard + admin + gallery) */
+  /* overlay (name gate + leaderboard + admin) */
   .overlay{ position:fixed; inset:0; background:rgba(6,8,16,.86); backdrop-filter:blur(3px); z-index:50;
     display:flex; align-items:center; justify-content:center; padding:16px; }
   .overlay.hidden{ display:none; }
@@ -110,13 +106,6 @@
   .adm-row input{ flex:1; margin:0; }
   .adm-row button{ padding:0 10px; border-radius:8px; border:1px solid var(--line); background:var(--panel-2); color:var(--text); cursor:pointer; font-size:12px; }
   .checkline{ display:flex; align-items:center; gap:8px; font-size:13px; margin-bottom:10px; }
-
-  .gallery-card{ max-width:440px; }
-  .gallery-grid{ display:grid; grid-template-columns:repeat(auto-fill, minmax(90px,1fr)); gap:10px; max-height:360px; overflow:auto; }
-  .gallery-thumb-wrap{ display:flex; flex-direction:column; align-items:center; gap:4px; }
-  .gallery-thumb{ width:90px; height:90px; border-radius:8px; border:1px solid var(--line); cursor:pointer; }
-  .gallery-thumb-date{ font-size:10px; color:var(--text-dim); }
-  .gallery-detail-canvas{ width:100%; max-width:300px; border-radius:10px; border:1px solid var(--line); display:block; margin:0 auto; }
 </style>
 </head>
 <body>
@@ -129,7 +118,6 @@
     </div>
   </div>
   <div class="hdr-btns">
-    <div class="pillbtn" id="galleryBtn">🖼 Gallery</div>
     <div class="pillbtn" id="lbBtn">🏆 Top</div>
     <div class="pillbtn" id="adminBtn" style="display:none;">🛡️ Admin</div>
   </div>
@@ -151,12 +139,6 @@
 
   <div class="dock">
     <div class="palette" id="palette"></div>
-    <div class="extra-tools">
-      <label class="colorwheel-wrap" title="Custom color">
-        <input type="color" id="colorWheel" value="#e0980f">
-      </label>
-      <div class="pillbtn" id="eyedropBtn">💧 Pick Color From Canvas</div>
-    </div>
     <div class="deploy-row">
       <button class="deploy-btn" id="deployBtn">
         <div class="deploy-fill" id="deployFill" style="transform:scaleY(0);"></div>
@@ -184,19 +166,8 @@
   <div class="card" style="position:relative; max-width:340px;">
     <span class="closeX" id="lbClose">✕</span>
     <h2>🏆 Top Painters</h2>
-    <p>Most pixels placed this round.</p>
+    <p>Most pixels placed this event.</p>
     <div id="lbList" style="max-height:320px; overflow:auto;"></div>
-  </div>
-</div>
-
-<!-- gallery -->
-<div class="overlay hidden" id="galleryOverlay">
-  <div class="card gallery-card" style="position:relative;">
-    <span class="closeX" id="galleryClose">✕</span>
-    <h2>🖼 Gallery</h2>
-    <p>Finished canvases from past rounds.</p>
-    <div class="gallery-grid" id="galleryGrid"></div>
-    <div id="galleryDetail" style="display:none;"></div>
   </div>
 </div>
 
@@ -211,10 +182,6 @@
       <div style="font-size:12.5px; color:var(--text-dim); margin-bottom:6px;">Block someone from painting</div>
       <div class="adm-row"><input type="text" id="banInput" placeholder="exact name"><button id="banBtn">Ban</button></div>
       <div class="adm-row"><input type="text" id="unbanInput" placeholder="exact name"><button id="unbanBtn">Unban</button></div>
-    </div>
-    <div class="adm-section">
-      <div style="font-size:12.5px; color:var(--text-dim); margin-bottom:6px;">Finish this round</div>
-      <div class="pillbtn" id="publishBtn" style="width:100%; text-align:center; box-sizing:border-box;">📸 Publish &amp; Reset Canvas</div>
     </div>
   </div>
 </div>
@@ -247,11 +214,10 @@
   };
   firebase.initializeApp(firebaseConfig);
   const db = firebase.database();
-  const pixelsRef = db.ref('pixels');   // "x_y" -> palette index OR hex string
+  const pixelsRef = db.ref('pixels');   // "x_y" -> palette index
   const ownersRef = db.ref('owners');   // "x_y" -> username
   const countsRef = db.ref('counts');   // username -> pixel count
   const bannedRef = db.ref('banned');   // username -> true
-  const galleryRef = db.ref('gallery'); // pushId -> { pixels, ts, top }
 
   const PALETTE = [
     '#f5f2e8','#ffffff','#c9d1e0','#8a93b8','#3a4468',
@@ -264,7 +230,7 @@
   ];
 
   let pixels = {}, loaded = false, selected = 21;
-  let username = null, isAdmin = false, eraseMode = false, pickMode = false;
+  let username = null, isAdmin = false, eraseMode = false;
   let lastPlaced = 0;
   let scale = 8, zoom = 1, panX = 0, panY = 0;
   let dragging = false, dragMoved = false, dragStart = null, panStart = null;
@@ -280,16 +246,9 @@
   const deployFill = document.getElementById('deployFill');
   const deployLabel = document.getElementById('deployLabel');
   const coordsNote = document.getElementById('coordsNote');
-  const colorWheel = document.getElementById('colorWheel');
-  const eyedropBtn = document.getElementById('eyedropBtn');
 
   function keyFor(x,y){ return x + '_' + y; }
-  // handles both a palette index (number) and a custom hex color (string) per pixel
-  function colorForIndex(v){
-    if(typeof v === 'string' && v.charAt(0) === '#') return v;
-    return PALETTE[(v>=0 && v<PALETTE.length) ? v : 0];
-  }
-  function resolveColor(v){ return typeof v === 'number' ? PALETTE[v] : v; }
+  function colorForIndex(i){ return PALETTE[(i>=0 && i<PALETTE.length) ? i : 0]; }
   function sanitizeName(raw){
     return raw.trim().replace(/[.#$\/\[\]]/g,'_').slice(0,20);
   }
@@ -333,7 +292,7 @@
       for(let y=0;y<=H;y++){ ctx.beginPath(); ctx.moveTo(0,y*cell); ctx.lineTo(W*cell,y*cell); ctx.stroke(); }
     }
     if(hoverCell){
-      ctx.strokeStyle = eraseMode ? '#ff4d4d' : (pickMode ? '#4c7cf0' : resolveColor(selected));
+      ctx.strokeStyle = eraseMode ? '#ff4d4d' : PALETTE[selected];
       ctx.lineWidth = 2/zoom;
       ctx.strokeRect(hoverCell.x*cell+1, hoverCell.y*cell+1, cell-2, cell-2);
     }
@@ -379,18 +338,6 @@
     });
   }
 
-  function selectColor(v){
-    selected = v;
-    if(typeof v === 'number'){
-      document.querySelectorAll('.swatch').forEach((el,idx)=> el.classList.toggle('selected', idx===v));
-      colorWheel.value = PALETTE[v];
-    } else {
-      document.querySelectorAll('.swatch').forEach(el=> el.classList.remove('selected'));
-      colorWheel.value = v;
-    }
-    render();
-  }
-
   function cooldownRemaining(){
     if(isAdmin && eraseMode) return 0;
     return Math.max(0, COOLDOWN_MS - (Date.now() - lastPlaced));
@@ -400,7 +347,7 @@
     if(rem <= 0){
       deployBtn.classList.add('ready');
       deployFill.style.transform = 'scaleY(0)';
-      deployLabel.innerHTML = eraseMode ? 'Erase Tile' : (pickMode ? 'Pick a Tile' : 'Place Pixel');
+      deployLabel.innerHTML = eraseMode ? 'Erase Tile' : 'Place Pixel';
     } else {
       deployBtn.classList.remove('ready');
       deployFill.style.transform = 'scaleY(' + (rem/COOLDOWN_MS) + ')';
@@ -448,7 +395,6 @@
       fitCanvas(); clampPan(); render();
       pixelsRef.on('child_added', (s)=>{ pixels[s.key]=s.val(); render(); });
       pixelsRef.on('child_changed', (s)=>{ pixels[s.key]=s.val(); render(); });
-      pixelsRef.on('child_removed', (s)=>{ delete pixels[s.key]; render(); });
     }, ()=>{ loadingEl.textContent = 'Could not connect — check your Firebase config'; });
 
     countsRef.on('value', (snap)=>{ latestCounts = snap.val() || {}; renderLeaderboard(); });
@@ -464,102 +410,6 @@
     ).join('');
   }
   function escapeHtml(s){ const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
-
-  // ---------- gallery ----------
-  function drawSnapshotToCanvas(canvasEl, snapshotPixels){
-    const c = canvasEl.getContext('2d');
-    const cell = canvasEl.width / W;
-    for(let y=0;y<H;y++){
-      for(let x=0;x<W;x++){
-        c.fillStyle = colorForIndex((snapshotPixels && snapshotPixels[keyFor(x,y)]) || 0);
-        c.fillRect(x*cell, y*cell, cell+0.5, cell+0.5);
-      }
-    }
-  }
-
-  function openGallery(){
-    document.getElementById('galleryOverlay').classList.remove('hidden');
-    document.getElementById('galleryDetail').style.display = 'none';
-    const grid = document.getElementById('galleryGrid');
-    grid.style.display = 'grid';
-    grid.innerHTML = '<div style="color:var(--text-dim); font-size:13px;">Loading…</div>';
-    galleryRef.once('value', (snap)=>{
-      const items = [];
-      snap.forEach(child=>{ items.push(Object.assign({key:child.key}, child.val())); });
-      items.sort((a,b)=> (b.ts||0) - (a.ts||0));
-      renderGalleryGrid(items);
-    }, ()=>{ grid.innerHTML = '<div style="color:var(--crimson); font-size:13px;">Could not load gallery.</div>'; });
-  }
-
-  function renderGalleryGrid(items){
-    const grid = document.getElementById('galleryGrid');
-    if(items.length === 0){ grid.innerHTML = '<div style="color:var(--text-dim); font-size:13px;">No published canvases yet.</div>'; return; }
-    grid.innerHTML = '';
-    items.forEach(item=>{
-      const wrap = document.createElement('div');
-      wrap.className = 'gallery-thumb-wrap';
-      const thumb = document.createElement('canvas');
-      thumb.width = 90; thumb.height = 90;
-      thumb.className = 'gallery-thumb';
-      drawSnapshotToCanvas(thumb, item.pixels);
-      thumb.addEventListener('click', ()=> openGalleryDetail(item));
-      const label = document.createElement('div');
-      label.className = 'gallery-thumb-date';
-      label.textContent = item.ts ? new Date(item.ts).toLocaleDateString() : '';
-      wrap.appendChild(thumb);
-      wrap.appendChild(label);
-      grid.appendChild(wrap);
-    });
-  }
-
-  function openGalleryDetail(item){
-    document.getElementById('galleryGrid').style.display = 'none';
-    const detail = document.getElementById('galleryDetail');
-    detail.style.display = 'block';
-    detail.innerHTML = '';
-
-    const bigCanvas = document.createElement('canvas');
-    bigCanvas.width = 480; bigCanvas.height = 480;
-    bigCanvas.className = 'gallery-detail-canvas';
-    drawSnapshotToCanvas(bigCanvas, item.pixels);
-    detail.appendChild(bigCanvas);
-
-    const dateLabel = document.createElement('div');
-    dateLabel.style.cssText = 'text-align:center; font-size:11px; color:var(--text-dim); margin:8px 0;';
-    dateLabel.textContent = item.ts ? new Date(item.ts).toLocaleString() : '';
-    detail.appendChild(dateLabel);
-
-    if(item.top && item.top.length){
-      const topWrap = document.createElement('div');
-      const rows = item.top.map((t,i)=> '<div class="lb-row"><div class="lb-name"><span class="lb-rank">#'+(i+1)+'</span>'+escapeHtml(t.name)+'</div><div class="lb-count">'+t.count+'</div></div>').join('');
-      topWrap.innerHTML = '<div style="font-size:12.5px; color:var(--text-dim); margin:8px 0 4px;">Top painters</div>' + rows;
-      detail.appendChild(topWrap);
-    }
-
-    const back = document.createElement('div');
-    back.className = 'pillbtn';
-    back.style.cssText = 'margin-top:12px; text-align:center;';
-    back.textContent = '← Back to Gallery';
-    back.addEventListener('click', ()=>{
-      detail.style.display = 'none';
-      document.getElementById('galleryGrid').style.display = 'grid';
-    });
-    detail.appendChild(back);
-  }
-
-  function publishAndReset(){
-    if(!confirm('Publish the current canvas to the gallery and reset the board for a new round?')) return;
-    const snapshotPixels = pixels;
-    const topEntries = Object.entries(latestCounts).sort((a,b)=> b[1]-a[1]).slice(0,10)
-      .map(e=> ({name:e[0], count:e[1]}));
-    const newRef = galleryRef.push();
-    newRef.set({ pixels: snapshotPixels, ts: Date.now(), top: topEntries }).then(()=>{
-      return Promise.all([ pixelsRef.remove(), ownersRef.remove(), countsRef.remove() ]);
-    }).then(()=>{
-      showToast('Published! Canvas reset for a new round.');
-      document.getElementById('adminOverlay').classList.add('hidden');
-    }).catch(()=> showToast('Could not publish — try again'));
-  }
 
   // ---------- name gate ----------
   function tryEnter(){
@@ -616,18 +466,7 @@
   function onPointerUp(e){
     if(dragging && !dragMoved && !(isAdmin && eraseMode)){
       const cell = screenToCell(e.clientX, e.clientY);
-      if(cell){
-        if(pickMode){
-          const val = pixels[keyFor(cell.x, cell.y)];
-          if(val !== undefined) selectColor(val);
-          pickMode = false;
-          eyedropBtn.classList.remove('active');
-          updateDeployUI();
-          render();
-        } else {
-          placePixelAt(cell.x, cell.y);
-        }
-      }
+      if(cell) placePixelAt(cell.x, cell.y);
     }
     dragging = false;
   }
@@ -676,9 +515,6 @@
   document.getElementById('lbBtn').addEventListener('click', ()=>{ renderLeaderboard(); document.getElementById('lbOverlay').classList.remove('hidden'); });
   document.getElementById('lbClose').addEventListener('click', ()=> document.getElementById('lbOverlay').classList.add('hidden'));
 
-  document.getElementById('galleryBtn').addEventListener('click', openGallery);
-  document.getElementById('galleryClose').addEventListener('click', ()=> document.getElementById('galleryOverlay').classList.add('hidden'));
-
   document.getElementById('adminBtn').addEventListener('click', ()=> document.getElementById('adminOverlay').classList.remove('hidden'));
   document.getElementById('adminClose').addEventListener('click', ()=> document.getElementById('adminOverlay').classList.add('hidden'));
   document.getElementById('eraseToggle').addEventListener('change', (e)=>{ eraseMode = e.target.checked; updateDeployUI(); render(); });
@@ -691,15 +527,6 @@
     const n = sanitizeName(document.getElementById('unbanInput').value);
     if(!n) return;
     bannedRef.child(n).remove().then(()=> showToast('Unblocked: ' + n));
-  });
-  document.getElementById('publishBtn').addEventListener('click', publishAndReset);
-
-  colorWheel.addEventListener('input', (e)=>{ selectColor(e.target.value); });
-  eyedropBtn.addEventListener('click', ()=>{
-    pickMode = !pickMode;
-    eyedropBtn.classList.toggle('active', pickMode);
-    showToast(pickMode ? 'Click a painted tile to copy its color' : 'Pick mode off');
-    updateDeployUI();
   });
 
   // ---------- boot ----------
