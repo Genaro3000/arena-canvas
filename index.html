@@ -1,0 +1,550 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1, user-scalable=no">
+<title>Arena Canvas</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Baloo+2:wght@500;700;800&family=Inter:wght@400;500;600&family=JetBrains+Mono:wght@500;700&display=swap" rel="stylesheet">
+<!-- Firebase (free tier) -- shared, persistent board across every visitor's PC/phone -->
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.2/firebase-database-compat.js"></script>
+<style>
+  :root{
+    --void:#0a0d1a; --panel:#131a30; --panel-2:#1b2440; --line:#2a355c;
+    --gold:#f0b429; --gold-dim:#8a6a1f; --crimson:#e6483c; --blue:#4c7cf0;
+    --text:#eef1f8; --text-dim:#8a93b8;
+  }
+  *{ box-sizing:border-box; }
+  html,body{ margin:0; padding:0; width:100%; height:100%;
+    background: radial-gradient(1200px 600px at 50% -10%, #1a2348 0%, var(--void) 60%);
+    color:var(--text); font-family:'Inter',sans-serif; overflow:hidden; }
+  #root{ width:100%; height:100vh; display:flex; flex-direction:column; align-items:center; padding:14px 10px 10px; }
+
+  .hdr{ display:flex; align-items:center; justify-content:center; gap:10px; margin-bottom:10px; }
+  .hdr .crown{ font-size:20px; filter: drop-shadow(0 0 6px rgba(240,180,41,.6)); }
+  .hdr h1{ font-family:'Baloo 2',sans-serif; font-weight:800; font-size:22px; letter-spacing:.5px; margin:0; text-shadow:0 0 18px rgba(240,180,41,.25); }
+  .hdr .sub{ font-size:11px; color:var(--text-dim); font-weight:500; }
+  .hdr-btns{ position:absolute; right:12px; top:12px; display:flex; gap:8px; z-index:20; }
+  .pillbtn{ font-family:'Baloo 2'; font-size:12px; font-weight:700; padding:7px 12px; border-radius:16px;
+    background:var(--panel-2); border:1px solid var(--line); color:var(--text); cursor:pointer; }
+  .pillbtn:hover{ border-color:var(--gold); }
+
+  .arena-wrap{ position:relative; flex:1; width:100%; max-width:640px; display:flex; align-items:center; justify-content:center; min-height:0; }
+  .arena{ position:relative; width:min(92vw,560px); height:min(92vw,560px); background:var(--panel);
+    border-radius:14px; border:3px solid var(--gold-dim);
+    box-shadow:0 0 0 1px rgba(0,0,0,.4), inset 0 0 30px rgba(0,0,0,.55), 0 20px 50px rgba(0,0,0,.5);
+    overflow:hidden; touch-action:none; }
+  .torch{ position:absolute; width:14px; height:14px; z-index:3; pointer-events:none;
+    background:radial-gradient(circle,#ffd873 0%,var(--gold) 45%,transparent 75%); border-radius:50%;
+    box-shadow:0 0 14px 4px rgba(240,180,41,.55); animation:flicker 2.6s infinite ease-in-out; }
+  .torch.tl{ top:6px; left:6px; } .torch.tr{ top:6px; right:6px; animation-delay:.4s; }
+  .torch.bl{ bottom:6px; left:6px; animation-delay:.8s; } .torch.br{ bottom:6px; right:6px; animation-delay:1.2s; }
+  @keyframes flicker{ 0%,100%{opacity:.85;transform:scale(1);} 50%{opacity:1;transform:scale(1.15);} }
+
+  canvas#grid{ position:absolute; inset:0; width:100%; height:100%; cursor:crosshair; image-rendering:pixelated; }
+
+  .loading{ position:absolute; inset:0; display:flex; align-items:center; justify-content:center; flex-direction:column; gap:10px;
+    background:var(--panel); z-index:5; font-family:'Baloo 2'; color:var(--text-dim); font-size:14px; }
+  .spinner{ width:34px; height:34px; border-radius:50%; border:3px solid var(--line); border-top-color:var(--gold); animation:spin .9s linear infinite; }
+  @keyframes spin{ to{ transform:rotate(360deg); } }
+
+  .zoom-controls{ position:absolute; right:8px; top:8px; z-index:4; display:flex; flex-direction:column; gap:6px; }
+  .zbtn{ width:28px; height:28px; border-radius:8px; border:1px solid var(--line); background:rgba(19,26,48,.85);
+    color:var(--text); font-size:15px; font-weight:700; display:flex; align-items:center; justify-content:center; cursor:pointer; }
+  .zbtn:active{ transform:scale(.92); }
+
+  .toast{ position:absolute; top:8px; left:50%; transform:translateX(-50%); background:rgba(230,72,60,.95); color:#fff;
+    font-size:11.5px; font-weight:600; padding:6px 12px; border-radius:20px; z-index:6; opacity:0; pointer-events:none;
+    transition:opacity .25s ease, transform .25s ease; text-align:center; max-width:90%; }
+  .toast.show{ opacity:1; transform:translateX(-50%) translateY(4px); }
+
+  .dock{ width:100%; max-width:640px; margin-top:12px; display:flex; flex-direction:column; gap:10px; }
+  .palette{ display:flex; flex-wrap:wrap; gap:6px; justify-content:center; background:var(--panel); border:1px solid var(--line); border-radius:12px; padding:8px; }
+  .swatch{ width:24px; height:24px; border-radius:6px; cursor:pointer; border:2px solid rgba(255,255,255,.08); transition:transform .12s ease; }
+  .swatch:hover{ transform:translateY(-2px); }
+  .swatch.selected{ border-color:var(--gold); box-shadow:0 0 0 2px rgba(240,180,41,.35),0 0 10px rgba(240,180,41,.5); transform:translateY(-2px) scale(1.06); }
+
+  .deploy-row{ display:flex; align-items:center; gap:10px; justify-content:center; }
+  .deploy-btn{ position:relative; width:150px; height:44px; border-radius:22px; border:2px solid var(--gold-dim);
+    background:linear-gradient(180deg,#2a2110,#1a1508); color:var(--text); font-family:'Baloo 2'; font-weight:700; font-size:14px;
+    display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; overflow:hidden; user-select:none; }
+  .deploy-btn.ready{ background:linear-gradient(180deg,#3a2d10,#241b09); border-color:var(--gold);
+    box-shadow:0 0 16px rgba(240,180,41,.45), inset 0 0 10px rgba(240,180,41,.15); animation:pulse 1.6s infinite ease-in-out; cursor:pointer; }
+  .deploy-btn:not(.ready){ cursor:not-allowed; color:var(--text-dim); }
+  @keyframes pulse{ 0%,100%{box-shadow:0 0 12px rgba(240,180,41,.35);} 50%{box-shadow:0 0 22px rgba(240,180,41,.65);} }
+  .deploy-fill{ position:absolute; left:0; bottom:0; top:0; width:100%; background:rgba(76,124,240,.35); transform-origin:left; transition:transform .2s linear; }
+  .deploy-label{ position:relative; z-index:1; display:flex; align-items:center; gap:6px; }
+  .cd-num{ font-family:'JetBrains Mono'; font-weight:700; }
+
+  .coords{ font-family:'JetBrains Mono'; font-size:11px; color:var(--text-dim); text-align:center; }
+  .footer-note{ text-align:center; font-size:10.5px; color:var(--text-dim); opacity:.7; margin-top:2px; }
+
+  /* overlay (name gate + leaderboard + admin) */
+  .overlay{ position:fixed; inset:0; background:rgba(6,8,16,.86); backdrop-filter:blur(3px); z-index:50;
+    display:flex; align-items:center; justify-content:center; padding:16px; }
+  .overlay.hidden{ display:none; }
+  .card{ background:var(--panel); border:1px solid var(--line); border-radius:16px; padding:22px; width:100%; max-width:360px;
+    box-shadow:0 20px 60px rgba(0,0,0,.5); }
+  .card h2{ font-family:'Baloo 2'; margin:0 0 6px; font-size:19px; display:flex; align-items:center; gap:8px; }
+  .card p{ font-size:12.5px; color:var(--text-dim); margin:0 0 14px; line-height:1.5; }
+  .card input[type=text]{ width:100%; padding:10px 12px; border-radius:10px; border:1px solid var(--line);
+    background:var(--panel-2); color:var(--text); font-family:'Inter'; font-size:14px; margin-bottom:10px; }
+  .card .primary{ width:100%; padding:11px; border-radius:10px; border:none; background:var(--gold); color:#241b08;
+    font-family:'Baloo 2'; font-weight:800; font-size:14px; cursor:pointer; }
+  .card .primary:hover{ filter:brightness(1.08); }
+  .err{ color:var(--crimson); font-size:12px; margin:-4px 0 10px; min-height:14px; }
+
+  .lb-row{ display:flex; justify-content:space-between; align-items:center; padding:7px 0; border-bottom:1px solid var(--line); font-size:13px; }
+  .lb-row:last-child{ border-bottom:none; }
+  .lb-name{ display:flex; gap:8px; align-items:center; }
+  .lb-rank{ color:var(--gold); font-family:'JetBrains Mono'; font-weight:700; width:20px; }
+  .lb-count{ font-family:'JetBrains Mono'; color:var(--text-dim); }
+  .closeX{ position:absolute; top:14px; right:16px; cursor:pointer; color:var(--text-dim); font-size:18px; }
+  .adm-section{ margin-top:12px; padding-top:12px; border-top:1px solid var(--line); }
+  .adm-row{ display:flex; gap:6px; margin-bottom:8px; }
+  .adm-row input{ flex:1; margin:0; }
+  .adm-row button{ padding:0 10px; border-radius:8px; border:1px solid var(--line); background:var(--panel-2); color:var(--text); cursor:pointer; font-size:12px; }
+  .checkline{ display:flex; align-items:center; gap:8px; font-size:13px; margin-bottom:10px; }
+</style>
+</head>
+<body>
+<div id="root">
+  <div class="hdr">
+    <span class="crown">👑</span>
+    <div>
+      <h1>Arena Canvas</h1>
+      <div class="sub" id="onlineNote">shared community canvas — never resets while you're away</div>
+    </div>
+  </div>
+  <div class="hdr-btns">
+    <div class="pillbtn" id="lbBtn">🏆 Top</div>
+    <div class="pillbtn" id="adminBtn" style="display:none;">🛡️ Admin</div>
+  </div>
+
+  <div class="arena-wrap">
+    <div class="arena" id="arena">
+      <div class="loading" id="loading"><div class="spinner"></div><div>Loading the battlefield…</div></div>
+      <div class="torch tl"></div><div class="torch tr"></div>
+      <div class="torch bl"></div><div class="torch br"></div>
+      <canvas id="grid"></canvas>
+      <div class="zoom-controls">
+        <div class="zbtn" id="zoomIn">+</div>
+        <div class="zbtn" id="zoomOut">–</div>
+        <div class="zbtn" id="zoomReset">⤾</div>
+      </div>
+      <div class="toast" id="toast"></div>
+    </div>
+  </div>
+
+  <div class="dock">
+    <div class="palette" id="palette"></div>
+    <div class="deploy-row">
+      <button class="deploy-btn" id="deployBtn">
+        <div class="deploy-fill" id="deployFill" style="transform:scaleY(0);"></div>
+        <span class="deploy-label" id="deployLabel">Place Pixel</span>
+      </button>
+    </div>
+    <div class="coords" id="coordsNote">hover the grid to see coordinates</div>
+    <div class="footer-note">64×64 shared canvas · every pixel is signed with your name · one pixel per cooldown</div>
+  </div>
+</div>
+
+<!-- name gate -->
+<div class="overlay" id="nameOverlay">
+  <div class="card">
+    <h2>👑 Enter the Arena</h2>
+    <p>Pick the name that shows up on your pixels and on the leaderboard. You only need to do this once per device.</p>
+    <input type="text" id="nameInput" maxlength="20" placeholder="Your name or clan tag">
+    <div class="err" id="nameErr"></div>
+    <button class="primary" id="nameSubmit">Start Painting</button>
+  </div>
+</div>
+
+<!-- leaderboard -->
+<div class="overlay hidden" id="lbOverlay">
+  <div class="card" style="position:relative; max-width:340px;">
+    <span class="closeX" id="lbClose">✕</span>
+    <h2>🏆 Top Painters</h2>
+    <p>Most pixels placed this event.</p>
+    <div id="lbList" style="max-height:320px; overflow:auto;"></div>
+  </div>
+</div>
+
+<!-- admin panel -->
+<div class="overlay hidden" id="adminOverlay">
+  <div class="card" style="position:relative; max-width:360px;">
+    <span class="closeX" id="adminClose">✕</span>
+    <h2>🛡️ Admin Panel</h2>
+    <p>Erase inappropriate zones and manage who can paint.</p>
+    <div class="checkline"><input type="checkbox" id="eraseToggle"> <label for="eraseToggle">Erase mode (drag on canvas to clear tiles)</label></div>
+    <div class="adm-section">
+      <div style="font-size:12.5px; color:var(--text-dim); margin-bottom:6px;">Block someone from painting</div>
+      <div class="adm-row"><input type="text" id="banInput" placeholder="exact name"><button id="banBtn">Ban</button></div>
+      <div class="adm-row"><input type="text" id="unbanInput" placeholder="exact name"><button id="unbanBtn">Unban</button></div>
+    </div>
+  </div>
+</div>
+
+<script>
+(function(){
+  const W = 64, H = 64;
+  const NAME_KEY = 'arena_username_v1';
+  const COOLDOWN_KEY = 'arena_last_placed_v1';
+  const COOLDOWN_MS = 45 * 1000;
+  // change this to your own secret before publishing -- open the site with ?admin=YOUR_KEY to unlock admin tools
+  const ADMIN_KEY = 'changeme123';
+
+  // ---- PASTE YOUR FIREBASE CONFIG HERE ----
+  const firebaseConfig = {
+    apiKey: "AIzaSyAu6G3lzhPwD4GLFebaOVkdoA2Qamse9zg",
+    authDomain: "community-board-8f701.firebaseapp.com",
+    databaseURL: "https://community-board-8f701-default-rtdb.firebaseio.com",
+    projectId: "community-board-8f701",
+    storageBucket: "community-board-8f701.firebasestorage.app",
+    messagingSenderId: "778778664982",
+    appId: "1:778778664982:web:5728438a55f8964a04d537"
+  };
+  firebase.initializeApp(firebaseConfig);
+  const db = firebase.database();
+  const pixelsRef = db.ref('pixels');   // "x_y" -> palette index
+  const ownersRef = db.ref('owners');   // "x_y" -> username
+  const countsRef = db.ref('counts');   // username -> pixel count
+  const bannedRef = db.ref('banned');   // username -> true
+
+  const PALETTE = [
+    '#232a45','#ffffff','#c9d1e0','#8a93b8','#3a4468',
+    '#ff8fc7','#e6398a','#a83279','#6a2b8f','#4b2fa8',
+    '#4c7cf0','#6fb3ff','#39c5f0','#2ec4a6','#177a6b',
+    '#4cd964','#8ef07a','#c6f04c','#3a9b3a','#7a8c2e',
+    '#ffd93d','#f0b429','#ff9f43','#e6690f','#8a5a2b',
+    '#e6483c','#c72e2e','#8f1f2b','#f2917a','#ffcaa8',
+    '#1e2f6b','#0a0d1a'
+  ];
+
+  let pixels = {}, loaded = false, selected = 21;
+  let username = null, isAdmin = false, eraseMode = false;
+  let lastPlaced = 0;
+  let scale = 8, zoom = 1, panX = 0, panY = 0;
+  let dragging = false, dragMoved = false, dragStart = null, panStart = null;
+  let hoverCell = null;
+  let latestCounts = {};
+
+  const canvas = document.getElementById('grid');
+  const ctx = canvas.getContext('2d');
+  const arena = document.getElementById('arena');
+  const loadingEl = document.getElementById('loading');
+  const toastEl = document.getElementById('toast');
+  const deployBtn = document.getElementById('deployBtn');
+  const deployFill = document.getElementById('deployFill');
+  const deployLabel = document.getElementById('deployLabel');
+  const coordsNote = document.getElementById('coordsNote');
+
+  function keyFor(x,y){ return x + '_' + y; }
+  function colorForIndex(i){ return PALETTE[(i>=0 && i<PALETTE.length) ? i : 0]; }
+  function sanitizeName(raw){
+    return raw.trim().replace(/[.#$\/\[\]]/g,'_').slice(0,20);
+  }
+  function showToast(msg){
+    toastEl.textContent = msg;
+    toastEl.classList.add('show');
+    clearTimeout(showToast._t);
+    showToast._t = setTimeout(()=> toastEl.classList.remove('show'), 2000);
+  }
+
+  // ---------- rendering ----------
+  function fitCanvas(){
+    const rect = arena.getBoundingClientRect();
+    const dpr = window.devicePixelRatio || 1;
+    canvas.width = Math.round(rect.width * dpr);
+    canvas.height = Math.round(rect.height * dpr);
+    canvas.style.width = rect.width + 'px';
+    canvas.style.height = rect.height + 'px';
+    ctx.setTransform(dpr,0,0,dpr,0,0);
+    scale = rect.width / W;
+    render();
+  }
+
+  function render(){
+    if(!loaded) return;
+    const rect = arena.getBoundingClientRect();
+    ctx.clearRect(0,0,rect.width,rect.height);
+    ctx.save();
+    ctx.translate(panX,panY);
+    ctx.scale(zoom,zoom);
+    const cell = scale;
+    for(let y=0;y<H;y++){
+      for(let x=0;x<W;x++){
+        ctx.fillStyle = colorForIndex(pixels[keyFor(x,y)] || 0);
+        ctx.fillRect(x*cell, y*cell, cell+0.5, cell+0.5);
+      }
+    }
+    if(zoom*cell > 9){
+      ctx.strokeStyle = 'rgba(0,0,0,0.15)'; ctx.lineWidth = 1/zoom;
+      for(let x=0;x<=W;x++){ ctx.beginPath(); ctx.moveTo(x*cell,0); ctx.lineTo(x*cell,H*cell); ctx.stroke(); }
+      for(let y=0;y<=H;y++){ ctx.beginPath(); ctx.moveTo(0,y*cell); ctx.lineTo(W*cell,y*cell); ctx.stroke(); }
+    }
+    if(hoverCell){
+      ctx.strokeStyle = eraseMode ? '#ff4d4d' : PALETTE[selected];
+      ctx.lineWidth = 2/zoom;
+      ctx.strokeRect(hoverCell.x*cell+1, hoverCell.y*cell+1, cell-2, cell-2);
+    }
+    ctx.restore();
+  }
+
+  function clampPan(){
+    const rect = arena.getBoundingClientRect();
+    const cell = scale;
+    const boardW = W*cell*zoom, boardH = H*cell*zoom;
+    const minX = Math.min(0, rect.width - boardW);
+    const minY = Math.min(0, rect.height - boardH);
+    panX = Math.max(minX, Math.min(0, panX));
+    panY = Math.max(minY, Math.min(0, panY));
+    if(boardW <= rect.width) panX = (rect.width - boardW)/2;
+    if(boardH <= rect.height) panY = (rect.height - boardH)/2;
+  }
+
+  function screenToCell(clientX, clientY){
+    const rect = arena.getBoundingClientRect();
+    const cell = scale;
+    const localX = clientX - rect.left - panX;
+    const localY = clientY - rect.top - panY;
+    const x = Math.floor(localX / (cell*zoom));
+    const y = Math.floor(localY / (cell*zoom));
+    if(x<0||y<0||x>=W||y>=H) return null;
+    return {x,y};
+  }
+
+  function buildPalette(){
+    const wrap = document.getElementById('palette');
+    wrap.innerHTML = '';
+    PALETTE.forEach((c,i)=>{
+      const sw = document.createElement('div');
+      sw.className = 'swatch' + (i===selected ? ' selected' : '');
+      sw.style.background = c; sw.title = c;
+      sw.addEventListener('click', ()=>{
+        selected = i;
+        document.querySelectorAll('.swatch').forEach((el,idx)=> el.classList.toggle('selected', idx===i));
+        render();
+      });
+      wrap.appendChild(sw);
+    });
+  }
+
+  function cooldownRemaining(){
+    if(isAdmin && eraseMode) return 0;
+    return Math.max(0, COOLDOWN_MS - (Date.now() - lastPlaced));
+  }
+  function updateDeployUI(){
+    const rem = cooldownRemaining();
+    if(rem <= 0){
+      deployBtn.classList.add('ready');
+      deployFill.style.transform = 'scaleY(0)';
+      deployLabel.innerHTML = eraseMode ? 'Erase Tile' : 'Place Pixel';
+    } else {
+      deployBtn.classList.remove('ready');
+      deployFill.style.transform = 'scaleY(' + (rem/COOLDOWN_MS) + ')';
+      deployLabel.innerHTML = 'Ready in <span class="cd-num">' + Math.ceil(rem/1000) + 's</span>';
+    }
+  }
+  setInterval(updateDeployUI, 250);
+
+  // ---------- storage ----------
+  function loadCooldown(){
+    const v = localStorage.getItem(COOLDOWN_KEY);
+    return v ? parseInt(v,10) : 0;
+  }
+
+  async function placePixelAt(x,y){
+    if(!username) return;
+    if(eraseMode && isAdmin){
+      pixels[keyFor(x,y)] = 0;
+      render();
+      pixelsRef.child(keyFor(x,y)).set(0);
+      ownersRef.child(keyFor(x,y)).remove();
+      return;
+    }
+    if(cooldownRemaining() > 0) return;
+    pixels[keyFor(x,y)] = selected;
+    render();
+    const now = Date.now();
+    lastPlaced = now;
+    localStorage.setItem(COOLDOWN_KEY, String(now));
+    updateDeployUI();
+    try{
+      await pixelsRef.child(keyFor(x,y)).set(selected);
+      await ownersRef.child(keyFor(x,y)).set(username);
+      await countsRef.child(username).transaction(v => (v||0) + 1);
+    }catch(e){
+      showToast('Connection hiccup — pixel may not have saved');
+    }
+  }
+
+  function attachRealtimeListeners(){
+    pixelsRef.once('value', (snap)=>{
+      pixels = snap.val() || {};
+      loaded = true;
+      loadingEl.style.display = 'none';
+      fitCanvas(); clampPan(); render();
+      pixelsRef.on('child_added', (s)=>{ pixels[s.key]=s.val(); render(); });
+      pixelsRef.on('child_changed', (s)=>{ pixels[s.key]=s.val(); render(); });
+    }, ()=>{ loadingEl.textContent = 'Could not connect — check your Firebase config'; });
+
+    countsRef.on('value', (snap)=>{ latestCounts = snap.val() || {}; renderLeaderboard(); });
+  }
+
+  // ---------- leaderboard ----------
+  function renderLeaderboard(){
+    const list = document.getElementById('lbList');
+    const entries = Object.entries(latestCounts).sort((a,b)=> b[1]-a[1]).slice(0,15);
+    if(entries.length === 0){ list.innerHTML = '<div style="color:var(--text-dim); font-size:13px;">No pixels placed yet.</div>'; return; }
+    list.innerHTML = entries.map((e,i)=>
+      '<div class="lb-row"><div class="lb-name"><span class="lb-rank">#'+(i+1)+'</span>'+escapeHtml(e[0])+'</div><div class="lb-count">'+e[1]+'</div></div>'
+    ).join('');
+  }
+  function escapeHtml(s){ const d = document.createElement('div'); d.textContent = s; return d.innerHTML; }
+
+  // ---------- name gate ----------
+  function tryEnter(){
+    const raw = document.getElementById('nameInput').value;
+    const clean = sanitizeName(raw);
+    const errEl = document.getElementById('nameErr');
+    if(clean.length === 0){ errEl.textContent = 'Please enter a name.'; return; }
+    bannedRef.child(clean).once('value', (snap)=>{
+      if(snap.val() === true){
+        errEl.textContent = 'This name has been blocked from painting.';
+        return;
+      }
+      username = clean;
+      localStorage.setItem(NAME_KEY, clean);
+      document.getElementById('nameOverlay').classList.add('hidden');
+    }, ()=>{ errEl.textContent = 'Could not verify name — try again.'; });
+  }
+
+  // ---------- admin ----------
+  function initAdmin(){
+    const params = new URLSearchParams(window.location.search);
+    isAdmin = params.get('admin') === ADMIN_KEY;
+    if(isAdmin){
+      document.getElementById('adminBtn').style.display = 'inline-block';
+    }
+  }
+
+  // ---------- wiring ----------
+  function onPointerDown(e){
+    dragging = true; dragMoved = false;
+    dragStart = {x:e.clientX, y:e.clientY};
+    panStart = {x:panX, y:panY};
+    canvas.setPointerCapture(e.pointerId);
+    if(isAdmin && eraseMode){
+      const cell = screenToCell(e.clientX, e.clientY);
+      if(cell) placePixelAt(cell.x, cell.y);
+    }
+  }
+  function onPointerMove(e){
+    const cell = screenToCell(e.clientX, e.clientY);
+    hoverCell = cell;
+    coordsNote.textContent = cell ? ('(' + cell.x + ', ' + cell.y + ')') : 'hover the grid to see coordinates';
+    if(dragging){
+      if(isAdmin && eraseMode){
+        if(cell) placePixelAt(cell.x, cell.y);
+      } else {
+        const dx = e.clientX - dragStart.x, dy = e.clientY - dragStart.y;
+        if(Math.abs(dx)>4 || Math.abs(dy)>4) dragMoved = true;
+        if(dragMoved){ panX = panStart.x + dx; panY = panStart.y + dy; clampPan(); }
+      }
+    }
+    render();
+  }
+  function onPointerUp(e){
+    if(dragging && !dragMoved && !(isAdmin && eraseMode)){
+      const cell = screenToCell(e.clientX, e.clientY);
+      if(cell) placePixelAt(cell.x, cell.y);
+    }
+    dragging = false;
+  }
+  function onWheel(e){
+    e.preventDefault();
+    const rect = arena.getBoundingClientRect();
+    const mx = e.clientX-rect.left, my = e.clientY-rect.top;
+    const prevZoom = zoom;
+    zoom = Math.max(1, Math.min(8, zoom * (e.deltaY<0 ? 1.15 : 0.87)));
+    panX = mx - (mx-panX)*(zoom/prevZoom);
+    panY = my - (my-panY)*(zoom/prevZoom);
+    clampPan(); render();
+  }
+
+  document.getElementById('zoomIn').addEventListener('click', ()=>{
+    const rect = arena.getBoundingClientRect(); const prevZoom = zoom;
+    zoom = Math.min(8, zoom*1.3);
+    panX = rect.width/2-(rect.width/2-panX)*(zoom/prevZoom);
+    panY = rect.height/2-(rect.height/2-panY)*(zoom/prevZoom);
+    clampPan(); render();
+  });
+  document.getElementById('zoomOut').addEventListener('click', ()=>{
+    const rect = arena.getBoundingClientRect(); const prevZoom = zoom;
+    zoom = Math.max(1, zoom/1.3);
+    panX = rect.width/2-(rect.width/2-panX)*(zoom/prevZoom);
+    panY = rect.height/2-(rect.height/2-panY)*(zoom/prevZoom);
+    clampPan(); render();
+  });
+  document.getElementById('zoomReset').addEventListener('click', ()=>{ zoom=1; clampPan(); render(); });
+
+  deployBtn.addEventListener('click', ()=>{
+    if(cooldownRemaining() > 0){ showToast('Still cooling down'); return; }
+    if(hoverCell) placePixelAt(hoverCell.x, hoverCell.y);
+    else showToast('Hover the grid, then tap a tile');
+  });
+
+  canvas.addEventListener('pointerdown', onPointerDown);
+  canvas.addEventListener('pointermove', onPointerMove);
+  window.addEventListener('pointerup', onPointerUp);
+  canvas.addEventListener('wheel', onWheel, {passive:false});
+  window.addEventListener('resize', fitCanvas);
+
+  document.getElementById('nameSubmit').addEventListener('click', tryEnter);
+  document.getElementById('nameInput').addEventListener('keydown', (e)=>{ if(e.key==='Enter') tryEnter(); });
+
+  document.getElementById('lbBtn').addEventListener('click', ()=>{ renderLeaderboard(); document.getElementById('lbOverlay').classList.remove('hidden'); });
+  document.getElementById('lbClose').addEventListener('click', ()=> document.getElementById('lbOverlay').classList.add('hidden'));
+
+  document.getElementById('adminBtn').addEventListener('click', ()=> document.getElementById('adminOverlay').classList.remove('hidden'));
+  document.getElementById('adminClose').addEventListener('click', ()=> document.getElementById('adminOverlay').classList.add('hidden'));
+  document.getElementById('eraseToggle').addEventListener('change', (e)=>{ eraseMode = e.target.checked; updateDeployUI(); render(); });
+  document.getElementById('banBtn').addEventListener('click', ()=>{
+    const n = sanitizeName(document.getElementById('banInput').value);
+    if(!n) return;
+    bannedRef.child(n).set(true).then(()=> showToast('Blocked: ' + n));
+  });
+  document.getElementById('unbanBtn').addEventListener('click', ()=>{
+    const n = sanitizeName(document.getElementById('unbanInput').value);
+    if(!n) return;
+    bannedRef.child(n).remove().then(()=> showToast('Unblocked: ' + n));
+  });
+
+  // ---------- boot ----------
+  function init(){
+    buildPalette();
+    initAdmin();
+    lastPlaced = loadCooldown();
+    updateDeployUI();
+    attachRealtimeListeners();
+
+    const savedName = localStorage.getItem(NAME_KEY);
+    if(savedName){
+      bannedRef.child(savedName).once('value', (snap)=>{
+        if(snap.val() === true){
+          document.getElementById('nameInput').value = savedName;
+          document.getElementById('nameErr').textContent = 'This name has been blocked from painting.';
+        } else {
+          username = savedName;
+          document.getElementById('nameOverlay').classList.add('hidden');
+        }
+      });
+    }
+  }
+  init();
+})();
+</script>
+</body>
+</html>
