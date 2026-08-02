@@ -270,6 +270,7 @@
   let dragging = false, dragMoved = false, dragStart = null, panStart = null;
   let hoverCell = null;
   let latestCounts = {};
+  let owners = {};
   let renderQueued = false;
   function scheduleRender(){
     if(renderQueued) return;
@@ -430,8 +431,13 @@
       ownersRef.child(keyFor(x,y)).remove();
       return;
     }
+     const key = keyFor(x,y);
+    if(pixels[key] !== undefined && owners[key] !== username){
+      showToast('Only ' + owners[key] + ' can recolor this tile');
+      return;
+    }
     if(cooldownRemaining() > 0) return;
-    pixels[keyFor(x,y)] = selected;
+    pixels[key] = selected;
     render();
     const now = Date.now();
     lastPlaced = now;
@@ -458,6 +464,11 @@
     }, ()=>{ loadingEl.textContent = 'Could not connect — check your Firebase config'; });
 
     countsRef.on('value', (snap)=>{ latestCounts = snap.val() || {}; renderLeaderboard(); });
+
+    ownersRef.once('value', (snap)=>{ owners = snap.val() || {}; });
+    ownersRef.on('child_added', (s)=>{ owners[s.key] = s.val(); });
+    ownersRef.on('child_changed', (s)=>{ owners[s.key] = s.val(); });
+    ownersRef.on('child_removed', (s)=>{ delete owners[s.key]; });
   }
 
   // ---------- leaderboard ----------
