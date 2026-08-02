@@ -69,9 +69,9 @@
   .deploy-btn{ position:relative; width:150px; height:44px; border-radius:22px; border:2px solid var(--gold-dim);
     background:linear-gradient(180deg,#2a2110,#1a1508); color:var(--text); font-family:'Baloo 2'; font-weight:700; font-size:14px;
     display:flex; align-items:center; justify-content:center; gap:6px; cursor:pointer; overflow:hidden; user-select:none; }
-  .deploy-btn.ready{ background:linear-gradient(180deg,#3a2d10,#241b09); border-color:var(--gold);
-    box-shadow:0 0 16px rgba(240,180,41,.45), inset 0 0 10px rgba(240,180,41,.15); animation:pulse 1.6s infinite ease-in-out; cursor:pointer; }
-  .deploy-btn:not(.ready){ cursor:not-allowed; color:var(--text-dim); }
+  .deploy-btn.ready{ background:linear-gradient(180deg,#4a3a14,#2e2410); border-color:var(--gold); border-width:3px;
+    box-shadow:0 0 26px rgba(224,152,15,.75), inset 0 0 14px rgba(224,152,15,.3); animation:pulse 1.3s infinite ease-in-out; cursor:pointer; }
+  @keyframes pulse{ 0%,100%{box-shadow:0 0 20px rgba(224,152,15,.55); transform:scale(1);} 50%{box-shadow:0 0 36px rgba(224,152,15,.9); transform:scale(1.04);} }
   @keyframes pulse{ 0%,100%{box-shadow:0 0 12px rgba(240,180,41,.35);} 50%{box-shadow:0 0 22px rgba(240,180,41,.65);} }
   .deploy-fill{ position:absolute; left:0; bottom:0; top:0; width:100%; background:rgba(76,124,240,.35); transform-origin:left; transition:transform .2s linear; }
   .deploy-label{ position:relative; z-index:1; display:flex; align-items:center; gap:6px; }
@@ -146,7 +146,7 @@
       </button>
     </div>
     <div class="coords" id="coordsNote">hover the grid to see coordinates</div>
-    <div class="footer-note">64×64 shared canvas · every pixel is signed with your name · one pixel per cooldown</div>
+    <div class="footer-note" id="footerNote">shared canvas · every pixel is signed with your name · one pixel per cooldown</div>
   </div>
 </div>
 
@@ -191,7 +191,7 @@
   const W = 192, H = 192;
   const NAME_KEY = 'arena_username_v1';
   const COOLDOWN_KEY = 'arena_last_placed_v1';
-  const COOLDOWN_MS = 45 * 1000;
+  const COOLDOWN_MS = 25 * 1000;
   // change this to your own secret before publishing -- open the site with ?admin=YOUR_KEY to unlock admin tools
   const ADMIN_KEY = 'Inrohide';
 
@@ -525,6 +525,7 @@
   // ---------- boot ----------
   function init(){
     buildPalette();
+    document.getElementById('footerNote').textContent = W + '×' + H + ' shared canvas · every pixel is signed with your name · one pixel per cooldown';
     initAdmin();
     lastPlaced = loadCooldown();
     updateDeployUI();
