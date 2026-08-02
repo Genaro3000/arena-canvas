@@ -617,7 +617,7 @@
         if(dragMoved){ panX = panStart.x + dx; panY = panStart.y + dy; clampPan(); }
       }
     }
-    render();
+    scheduleRender();
   }
   function onPointerUp(e){
     if(dragging && !dragMoved && !(isAdmin && eraseMode)){
