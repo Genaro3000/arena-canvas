@@ -129,6 +129,7 @@
     </div>
   </div>
   <div class="hdr-btns">
+    <div class="pillbtn" id="onlineIndicator">🟢 0 online</div>
     <div class="pillbtn" id="galleryBtn">🖼 Gallery</div>
     <div class="pillbtn" id="lbBtn">🏆 Top</div>
     <div class="pillbtn" id="adminBtn" style="display:none;">🛡️ Admin</div>
@@ -269,6 +270,7 @@
   const countsRef = db.ref('counts');   // username -> pixel count
   const bannedRef = db.ref('banned');   // username -> true
   const galleryRef = db.ref('gallery'); // pushId -> { pixels, ts, top }
+  const presenceRef = db.ref('presence'); // sessionId -> true, auto-removed on disconnect
   const lockRef = db.ref('roundLock');  // prevents double auto-publish when the board fills up
   const CLIENT_ID = Math.random().toString(36).slice(2);
 
@@ -803,7 +805,19 @@ protectBtn.addEventListener('click', ()=>{
         showToast('Protection disabled');
     }
   });
-
+    function setupPresence(){
+    db.ref('.info/connected').on('value', (snap)=>{
+      if(snap.val() === true){
+        const mySession = presenceRef.push();
+        mySession.set(true);
+        mySession.onDisconnect().remove();
+      }
+    });
+    presenceRef.on('value', (snap)=>{
+      const count = snap.numChildren();
+      document.getElementById('onlineIndicator').textContent = '🟢 ' + count + ' online';
+    });
+  } 
   // ---------- boot ----------
   function init(){
     buildPalette();
@@ -812,7 +826,7 @@ protectBtn.addEventListener('click', ()=>{
     lastPlaced = loadCooldown();
     updateDeployUI();
     attachRealtimeListeners();
-
+    setupPresence();
     const savedName = localStorage.getItem(NAME_KEY);
     if(savedName){
       bannedRef.child(savedName).once('value', (snap)=>{
