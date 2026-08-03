@@ -269,6 +269,8 @@
   const countsRef = db.ref('counts');   // username -> pixel count
   const bannedRef = db.ref('banned');   // username -> true
   const galleryRef = db.ref('gallery'); // pushId -> { pixels, ts, top }
+  const lockRef = db.ref('roundLock');  // prevents double auto-publish when the board fills up
+  const CLIENT_ID = Math.random().toString(36).slice(2);
 
   const PALETTE = [
     '#f5f2e8','#ffffff','#c9d1e0','#8a93b8','#3a4468',
@@ -336,6 +338,19 @@ function updatePixelCounter(){
 
     pixelCounter.textContent =
         'Pixels left: ' + leftPixels + ' / ' + totalPixels;
+
+    autoFinishIfComplete();
+}
+
+function autoFinishIfComplete(){
+    const total = W * H;
+    if(Object.keys(owners).length < total) return;
+    lockRef.transaction(v => v || CLIENT_ID).then(res=>{
+        if(res.committed && res.snapshot.val() === CLIENT_ID){
+            publishAndReset(true);
+            lockRef.remove();
+        }
+    });
 }
 
   // ---------- rendering ----------
@@ -620,8 +635,8 @@ ownersRef.on('child_removed', (s)=>{
     detail.appendChild(back);
   }
 
-  function publishAndReset(){
-    if(!confirm('Publish the current canvas to the gallery and reset the board for a new round?')) return;
+ function publishAndReset(auto){
+    if(!auto && !confirm('Publish the current canvas to the gallery and reset the board for a new round?')) return;
     const snapshotPixels = pixels;
     const topEntries = Object.entries(latestCounts).sort((a,b)=> b[1]-a[1]).slice(0,10)
       .map(e=> ({name:e[0], count:e[1]}));
@@ -629,7 +644,7 @@ ownersRef.on('child_removed', (s)=>{
     newRef.set({ pixels: snapshotPixels, ts: Date.now(), top: topEntries }).then(()=>{
       return Promise.all([ pixelsRef.remove(), ownersRef.remove(), countsRef.remove() ]);
     }).then(()=>{
-      showToast('Published! Canvas reset for a new round.');
+     showToast(auto ? 'Canvas complete! Published to gallery and reset.' : 'Published! Canvas reset for a new round.');
       document.getElementById('adminOverlay').classList.add('hidden');
     }).catch(()=> showToast('Could not publish — try again'));
   }
