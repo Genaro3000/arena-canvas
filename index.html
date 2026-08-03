@@ -273,16 +273,14 @@
   const CLIENT_ID = Math.random().toString(36).slice(2);
 
   const PALETTE = [
-    '#f5f2e8','#ffffff','#c9d1e0','#8a93b8','#3a4468',
-    '#ff8fc7','#e6398a','#a83279','#6a2b8f','#4b2fa8',
-    '#4c7cf0','#6fb3ff','#39c5f0','#2ec4a6','#177a6b',
-    '#4cd964','#8ef07a','#c6f04c','#3a9b3a','#7a8c2e',
-    '#ffd93d','#f0b429','#ff9f43','#e6690f','#8a5a2b',
-    '#e6483c','#c72e2e','#8f1f2b','#f2917a','#ffcaa8',
-    '#1e2f6b','#0a0d1a'
+    '#f5f2e8',
+    '#000000', '#ffffff', '#ff0000', '#000080',
+    '#9d00ff', '#ff0080', '#6f4e37', '#ffd700',
+    '#ffa500', '#90d5ff', '#006400', '#88e788',
+    '#808080'
   ];
 
-  let pixels = {}, loaded = false, selected = 21;
+  let pixels = {}, loaded = false, selected = 8;
   let username = null, isAdmin = false, eraseMode = false, pickMode = false;
   let protectOwnPixels = true;
   let lastPlaced = 0;
