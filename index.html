@@ -173,7 +173,15 @@
       </button>
     </div>
     <div class="coords" id="coordsNote">hover the grid to see coordinates</div>
-    <div class="footer-note" id="footerNote">shared canvas · every pixel is signed with your name · one pixel per cooldown</div>
+
+<div class="coords" id="pixelCounter">
+    Pixels left: 36864
+</div>
+
+<div class="footer-note" id="footerNote">
+    shared canvas · every pixel is signed with your name · one pixel per cooldown
+</div>
+
   </div>
 </div>
 
@@ -297,6 +305,7 @@
   const deployFill = document.getElementById('deployFill');
   const deployLabel = document.getElementById('deployLabel');
   const coordsNote = document.getElementById('coordsNote');
+  const pixelCounter = document.getElementById('pixelCounter');
   const colorWheel = document.getElementById('colorWheel');
   const eyedropBtn = document.getElementById('eyedropBtn');
 
@@ -316,6 +325,18 @@
     clearTimeout(showToast._t);
     showToast._t = setTimeout(()=> toastEl.classList.remove('show'), 2000);
   }
+
+function updatePixelCounter(){
+
+    const totalPixels = W * H;
+
+    const filledPixels = Object.keys(owners).length;
+
+    const leftPixels = totalPixels - filledPixels;
+
+    pixelCounter.textContent =
+        'Pixels left: ' + leftPixels + ' / ' + totalPixels;
+}
 
   // ---------- rendering ----------
   function fitCanvas(){
@@ -485,10 +506,25 @@ if (pixels[key] !== undefined) {
 
     countsRef.on('value', (snap)=>{ latestCounts = snap.val() || {}; renderLeaderboard(); });
 
-    ownersRef.once('value', (snap)=>{ owners = snap.val() || {}; });
-    ownersRef.on('child_added', (s)=>{ owners[s.key] = s.val(); });
-    ownersRef.on('child_changed', (s)=>{ owners[s.key] = s.val(); });
-    ownersRef.on('child_removed', (s)=>{ delete owners[s.key]; });
+ownersRef.once('value', (snap)=>{
+    owners = snap.val() || {};
+    updatePixelCounter();
+});
+
+ownersRef.on('child_added', (s)=>{
+    owners[s.key] = s.val();
+    updatePixelCounter();
+});
+
+ownersRef.on('child_changed', (s)=>{
+    owners[s.key] = s.val();
+    updatePixelCounter();
+});
+
+ownersRef.on('child_removed', (s)=>{
+    delete owners[s.key];
+    updatePixelCounter();
+});
   }
 
   // ---------- leaderboard ----------
