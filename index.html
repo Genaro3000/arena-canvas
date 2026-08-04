@@ -157,11 +157,11 @@
     </label>
 
     <div class="pillbtn" id="eyedropBtn">
-        💧 Pick Color From Canvas
+        💧 Pick Color
     </div>
 
     <div class="pillbtn active" id="protectBtn">
-        🔒 Protect My Pixels
+        🔒 Protect Pixels
     </div>
 
 </div>
@@ -796,10 +796,10 @@ protectBtn.addEventListener('click', ()=>{
     protectBtn.classList.toggle('active', protectOwnPixels);
 
     if (protectOwnPixels) {
-        protectBtn.innerHTML = '🔒 Protect My Pixels';
+        protectBtn.innerHTML = '🔒 Protect Pixels';
         showToast('Protection enabled');
     } else {
-        protectBtn.innerHTML = '✏️ Edit My Pixels';
+        protectBtn.innerHTML = '✏️ Edit Pixels';
         showToast('Protection disabled');
     }
   });
