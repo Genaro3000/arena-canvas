@@ -50,6 +50,7 @@
   @keyframes spin{ to{ transform:rotate(360deg); } }
 
   .zoom-controls{ position:absolute; right:8px; top:8px; z-index:4; display:flex; flex-direction:column; gap:6px; }
+  .zoom-row{ display:flex; flex-direction:row; gap:6px; }
   .zbtn{ width:28px; height:28px; border-radius:8px; border:1px solid var(--line); background:rgba(19,26,48,.85);
     color:#ffffff; font-size:15px; font-weight:700; display:flex; align-items:center; justify-content:center; cursor:pointer; }
   .zbtn:active{ transform:scale(.92); }
@@ -140,8 +141,10 @@
       <div class="loading" id="loading"><div class="spinner"></div><div>Loading the battlefield…</div></div>
       <canvas id="grid"></canvas>
       <div class="zoom-controls">
-        <div class="zbtn" id="zoomIn">+</div>
-        <div class="zbtn" id="zoomOut">–</div>
+        <div class="zoom-row">
+          <div class="zbtn" id="zoomOut">–</div>
+          <div class="zbtn" id="zoomIn">+</div>
+        </div>
         <div class="zbtn" id="zoomReset">⤾</div>
         <div class="zbtn" id="canvasThemeBtn">◐</div>
       </div>
