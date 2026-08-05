@@ -387,7 +387,7 @@ function autoFinishIfComplete(){
         ctx.fillRect(x*cell, y*cell, cell+0.5, cell+0.5);
       }
     }
-    if(zoom*cell > 5){
+    if(zoom*cell > 8){
       ctx.strokeStyle = 'rgba(0,0,0,0.15)'; ctx.lineWidth = 1/zoom;
       for(let x=0;x<=W;x++){ ctx.beginPath(); ctx.moveTo(x*cell,0); ctx.lineTo(x*cell,H*cell); ctx.stroke(); }
       for(let y=0;y<=H;y++){ ctx.beginPath(); ctx.moveTo(0,y*cell); ctx.lineTo(W*cell,y*cell); ctx.stroke(); }
