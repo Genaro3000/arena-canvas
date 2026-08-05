@@ -473,7 +473,11 @@ function autoFinishIfComplete(){
 
   function eraseOwnPixelAt(x,y){
     const key = keyFor(x,y);
-    if(pixels[key] === undefined || owners[key] !== username) return;
+    if(pixels[key] === undefined) return;
+    if(owners[key] !== username){
+      showToast('Only ' + owners[key] + ' can erase this pixel');
+      return;
+    }
     delete pixels[key];
     delete owners[key];
     render();
