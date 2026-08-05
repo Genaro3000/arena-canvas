@@ -430,20 +430,21 @@ function autoFinishIfComplete(){
       if(i === 0) return; // this is the internal "empty tile" color, not a paintable option
       const sw = document.createElement('div');
       sw.className = 'swatch' + (i===selected ? ' selected' : '');
+      sw.dataset.paletteIndex = i;
       sw.style.background = c; sw.title = c;
       sw.addEventListener('click', ()=>{
         selected = i;
-        document.querySelectorAll('.swatch').forEach((el,idx)=> el.classList.toggle('selected', idx===i));
+        document.querySelectorAll('.swatch').forEach((el)=> el.classList.toggle('selected', parseInt(el.dataset.paletteIndex) === i));
         render();
       });
       wrap.appendChild(sw);
     });
   }
 
-  function selectColor(v){
+   function selectColor(v){
     selected = v;
     if(typeof v === 'number'){
-      document.querySelectorAll('.swatch').forEach((el,idx)=> el.classList.toggle('selected', idx===v));
+      document.querySelectorAll('.swatch').forEach((el)=> el.classList.toggle('selected', parseInt(el.dataset.paletteIndex) === v));
       colorWheel.value = PALETTE[v];
     } else {
       document.querySelectorAll('.swatch').forEach(el=> el.classList.remove('selected'));
