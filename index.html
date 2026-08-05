@@ -427,6 +427,7 @@ function autoFinishIfComplete(){
     const wrap = document.getElementById('palette');
     wrap.innerHTML = '';
     PALETTE.forEach((c,i)=>{
+      if(i === 0) return; // this is the internal "empty tile" color, not a paintable option
       const sw = document.createElement('div');
       sw.className = 'swatch' + (i===selected ? ' selected' : '');
       sw.style.background = c; sw.title = c;
