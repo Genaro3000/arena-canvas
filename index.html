@@ -54,6 +54,7 @@
   .zbtn{ width:28px; height:28px; border-radius:8px; border:1px solid var(--line); background:rgba(19,26,48,.85);
     color:#ffffff; font-size:15px; font-weight:700; display:flex; align-items:center; justify-content:center; cursor:pointer; }
   .zbtn:active{ transform:scale(.92); }
+  .zbtn.active{ background:var(--gold); color:#241b08; }
 
   .toast{ position:absolute; top:8px; left:50%; transform:translateX(-50%); background:rgba(230,72,60,.95); color:#fff;
     font-size:11.5px; font-weight:600; padding:6px 12px; border-radius:20px; z-index:6; opacity:0; pointer-events:none;
@@ -147,6 +148,7 @@
         </div>
         <div class="zbtn" id="zoomReset">⤾</div>
         <div class="zbtn" id="canvasThemeBtn">◐</div>
+        <div class="zbtn" id="selfEraseBtn">✕</div>
       </div>
       <div class="toast" id="toast"></div>
     </div>
@@ -295,6 +297,7 @@
   let owners = {};
   let renderQueued = false;
   let altBg = false;
+  let selfEraseModeOn = false;
   function scheduleRender(){
     if(renderQueued) return;
     renderQueued = true;
@@ -465,6 +468,16 @@ function autoFinishIfComplete(){
     }
   }
   setInterval(updateDeployUI, 250);
+
+  function eraseOwnPixelAt(x,y){
+    const key = keyFor(x,y);
+    if(pixels[key] === undefined || owners[key] !== username) return;
+    delete pixels[key];
+    delete owners[key];
+    render();
+    pixelsRef.child(key).remove();
+    ownersRef.child(key).remove();
+  }
 
   // ---------- storage ----------
   function loadCooldown(){
@@ -688,6 +701,9 @@ ownersRef.on('child_removed', (s)=>{
     if(isAdmin && eraseMode){
       const cell = screenToCell(e.clientX, e.clientY);
       if(cell) placePixelAt(cell.x, cell.y);
+    } else if(selfEraseModeOn){
+      const cell = screenToCell(e.clientX, e.clientY);
+      if(cell) eraseOwnPixelAt(cell.x, cell.y);
     }
   }
   function onPointerMove(e){
@@ -697,6 +713,8 @@ ownersRef.on('child_removed', (s)=>{
     if(dragging){
       if(isAdmin && eraseMode){
         if(cell) placePixelAt(cell.x, cell.y);
+      } else if(selfEraseModeOn){
+        if(cell) eraseOwnPixelAt(cell.x, cell.y);
       } else {
         const dx = e.clientX - dragStart.x, dy = e.clientY - dragStart.y;
         if(Math.abs(dx)>4 || Math.abs(dy)>4) dragMoved = true;
@@ -706,7 +724,7 @@ ownersRef.on('child_removed', (s)=>{
     scheduleRender();
   }
   function onPointerUp(e){
-    if(dragging && !dragMoved && !(isAdmin && eraseMode)){
+    if(dragging && !dragMoved && !(isAdmin && eraseMode) && !selfEraseModeOn){
       const cell = screenToCell(e.clientX, e.clientY);
       if(cell){
         if(pickMode){
@@ -752,6 +770,11 @@ ownersRef.on('child_removed', (s)=>{
   document.getElementById('canvasThemeBtn').addEventListener('click', ()=>{
     altBg = !altBg;
     render();
+  });
+  document.getElementById('selfEraseBtn').addEventListener('click', ()=>{
+    selfEraseModeOn = !selfEraseModeOn;
+    document.getElementById('selfEraseBtn').classList.toggle('active', selfEraseModeOn);
+    showToast(selfEraseModeOn ? 'Click your own pixels to erase them' : 'Erase mode off');
   });  
 
   deployBtn.addEventListener('click', ()=>{
