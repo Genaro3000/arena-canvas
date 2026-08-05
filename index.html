@@ -298,14 +298,15 @@
   let renderQueued = false;
   let altBg = false;
   let selfEraseModeOn = false;
-  function scheduleRender(){
-    if(renderQueued) return;
-    renderQueued = true;
-    requestAnimationFrame(()=>{ renderQueued = false; render(); });
-  }
+  if(cooldownRemaining() > 0) return;
+    pixels[key] = selected;
+    render();
 
   const canvas = document.getElementById('grid');
   const ctx = canvas.getContext('2d');
+  const offCanvas = document.createElement('canvas');
+  offCanvas.width = W; offCanvas.height = H;
+  const offCtx = offCanvas.getContext('2d');
   const arena = document.getElementById('arena');
   const loadingEl = document.getElementById('loading');
   const toastEl = document.getElementById('toast');
@@ -363,7 +364,7 @@ function autoFinishIfComplete(){
   // ---------- rendering ----------
   function fitCanvas(){
     const rect = arena.getBoundingClientRect();
-    const dpr = window.devicePixelRatio || 1;
+    const dpr = Math.min(window.devicePixelRatio || 1, 2);
     canvas.width = Math.round(rect.width * dpr);
     canvas.height = Math.round(rect.height * dpr);
     canvas.style.width = rect.width + 'px';
@@ -381,12 +382,8 @@ function autoFinishIfComplete(){
     ctx.translate(panX,panY);
     ctx.scale(zoom,zoom);
     const cell = scale;
-    for(let y=0;y<H;y++){
-      for(let x=0;x<W;x++){
-        ctx.fillStyle = colorForIndex(pixels[keyFor(x,y)] || 0);
-        ctx.fillRect(x*cell, y*cell, cell+0.5, cell+0.5);
-      }
-    }
+    ctx.imageSmoothingEnabled = false;
+    ctx.drawImage(offCanvas, 0, 0, W, H, 0, 0, W*cell, H*cell);
     if(zoom*cell > 8){
       ctx.strokeStyle = 'rgba(0,0,0,0.15)'; ctx.lineWidth = 1/zoom;
       for(let x=0;x<=W;x++){ ctx.beginPath(); ctx.moveTo(x*cell,0); ctx.lineTo(x*cell,H*cell); ctx.stroke(); }
@@ -398,6 +395,19 @@ function autoFinishIfComplete(){
       ctx.strokeRect(hoverCell.x*cell+1, hoverCell.y*cell+1, cell-2, cell-2);
     }
     ctx.restore();
+  }
+
+  function renderOffscreen(){
+    for(let y=0;y<H;y++){
+      for(let x=0;x<W;x++){
+        offCtx.fillStyle = colorForIndex(pixels[keyFor(x,y)] || 0);
+        offCtx.fillRect(x, y, 1, 1);
+      }
+    }
+  }
+  function paintOffscreenCell(x,y){
+    offCtx.fillStyle = colorForIndex(pixels[keyFor(x,y)] || 0);
+    offCtx.fillRect(x, y, 1, 1);
   }
 
   function clampPan(){
@@ -480,6 +490,7 @@ function autoFinishIfComplete(){
     }
     delete pixels[key];
     delete owners[key];
+    paintOffscreenCell(x,y);
     render();
     pixelsRef.child(key).remove();
     ownersRef.child(key).remove();
@@ -508,6 +519,7 @@ function autoFinishIfComplete(){
     }
     if(cooldownRemaining() > 0) return;
     pixels[key] = selected;
+    paintOffscreenCell(x,y);
     render();
     const now = Date.now();
     lastPlaced = now;
@@ -527,6 +539,7 @@ function autoFinishIfComplete(){
       pixels = snap.val() || {};
       loaded = true;
       loadingEl.style.display = 'none';
+      renderOffscreen();
       fitCanvas(); clampPan(); render();
       pixelsRef.on('child_added', (s)=>{ pixels[s.key]=s.val(); scheduleRender(); });
       pixelsRef.on('child_changed', (s)=>{ pixels[s.key]=s.val(); scheduleRender(); });
