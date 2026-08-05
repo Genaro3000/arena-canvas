@@ -387,7 +387,7 @@ function autoFinishIfComplete(){
         ctx.fillRect(x*cell, y*cell, cell+0.5, cell+0.5);
       }
     }
-    if(zoom*cell > 9){
+    if(zoom*cell > 5){
       ctx.strokeStyle = 'rgba(0,0,0,0.15)'; ctx.lineWidth = 1/zoom;
       for(let x=0;x<=W;x++){ ctx.beginPath(); ctx.moveTo(x*cell,0); ctx.lineTo(x*cell,H*cell); ctx.stroke(); }
       for(let y=0;y<=H;y++){ ctx.beginPath(); ctx.moveTo(0,y*cell); ctx.lineTo(W*cell,y*cell); ctx.stroke(); }
@@ -746,7 +746,7 @@ ownersRef.on('child_removed', (s)=>{
     const rect = arena.getBoundingClientRect();
     const mx = e.clientX-rect.left, my = e.clientY-rect.top;
     const prevZoom = zoom;
-    zoom = Math.max(1, Math.min(8, zoom * (e.deltaY<0 ? 1.15 : 0.87)));
+    zoom = Math.max(1, Math.min(20, zoom * (e.deltaY<0 ? 1.15 : 0.87)));
     panX = mx - (mx-panX)*(zoom/prevZoom);
     panY = my - (my-panY)*(zoom/prevZoom);
     clampPan(); render();
@@ -754,7 +754,7 @@ ownersRef.on('child_removed', (s)=>{
 
   document.getElementById('zoomIn').addEventListener('click', ()=>{
     const rect = arena.getBoundingClientRect(); const prevZoom = zoom;
-    zoom = Math.min(8, zoom*1.3);
+    zoom = Math.min(20, zoom*1.3);
     panX = rect.width/2-(rect.width/2-panX)*(zoom/prevZoom);
     panY = rect.height/2-(rect.height/2-panY)*(zoom/prevZoom);
     clampPan(); render();
