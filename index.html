@@ -497,19 +497,10 @@ function autoFinishIfComplete(){
     }
      const key = keyFor(x,y);
 
-if (pixels[key] !== undefined) {
-
-    if (owners[key] !== username) {
-        showToast('Only ' + owners[key] + ' can recolor this tile');
-        return;
-    }
-
-    if (owners[key] === username && protectOwnPixels) {
+    if (pixels[key] !== undefined && owners[key] === username && protectOwnPixels) {
         showToast('Your pixel is protected');
         return;
     }
-
-}
     if(cooldownRemaining() > 0) return;
     pixels[key] = selected;
     render();
