@@ -288,6 +288,7 @@
 
   let pixels = {}, loaded = false, selected = 8;
   let username = null, isAdmin = false, eraseMode = false, pickMode = false;
+  let isBannedNow = false;
   let protectOwnPixels = true;
   let lastPlaced = 0;
   let scale = 8, zoom = 1, panX = 0, panY = 0;
@@ -472,6 +473,7 @@ function autoFinishIfComplete(){
   setInterval(updateDeployUI, 250);
 
   function eraseOwnPixelAt(x,y){
+    if(isBannedNow) return;
     const key = keyFor(x,y);
     if(pixels[key] === undefined) return;
     if(owners[key] !== username){
@@ -493,6 +495,7 @@ function autoFinishIfComplete(){
 
   async function placePixelAt(x,y){
     if(!username) return;
+    if(isBannedNow){ showToast('You have been blocked from painting'); return; }
     if(eraseMode && isAdmin){
       pixels[keyFor(x,y)] = 0;
       render();
@@ -677,10 +680,18 @@ ownersRef.on('child_removed', (s)=>{
       username = clean;
       localStorage.setItem(NAME_KEY, clean);
       document.getElementById('nameOverlay').classList.add('hidden');
+      watchBanStatus();
     }, ()=>{ errEl.textContent = 'Could not verify name — try again.'; });
   }
 
   // ---------- admin ----------
+  function watchBanStatus(){
+    bannedRef.child(username).on('value', (snap)=>{
+      isBannedNow = snap.val() === true;
+      if(isBannedNow) showToast('You have been blocked from painting');
+    });
+  }
+
   function initAdmin(){
     const params = new URLSearchParams(window.location.search);
     isAdmin = params.get('admin') === ADMIN_KEY;
@@ -864,6 +875,7 @@ protectBtn.addEventListener('click', ()=>{
         } else {
           username = savedName;
           document.getElementById('nameOverlay').classList.add('hidden');
+          watchBanStatus();
         }
       });
     }
